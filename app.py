@@ -90,10 +90,23 @@ with center_col:
 if reset:
     if MASTER_FILE.exists():
         save_snapshot()
+        # Reset points
         df = pd.read_csv(MASTER_FILE)
         df["Total Points"] = 0
         df.to_csv(MASTER_FILE, index=False)
-        st.success("All player points reset.")
+
+        # Clear uploaded match log
+        pd.DataFrame(columns=["Match ID"]).to_csv(UPLOADED_MATCHES_FILE, index=False)
+
+        # Optionally clear undo/redo stacks
+        st.session_state.undo_stack.clear()
+        st.session_state.redo_stack.clear()
+
+        # Optionally delete match logs
+        for file in LOGS_DIR.glob("*.csv"):
+            file.unlink()
+
+        st.success("All player points, uploaded match list, and logs reset.")
     else:
         st.warning("Master file missing.")
 
