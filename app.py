@@ -1,3 +1,4 @@
+# app.py
 import streamlit as st
 import pandas as pd
 from pathlib import Path
@@ -91,24 +92,21 @@ if reset:
         save_snapshot()
         # Reset points
         df = pd.read_csv(MASTER_FILE)
-        if "Total Points" in df.columns:
-            df["Total Points"] = 0
-            df.to_csv(MASTER_FILE, index=False)
+        df["Total Points"] = 0
+        df.to_csv(MASTER_FILE, index=False)
 
-            # Clear uploaded match log
-            pd.DataFrame(columns=["Match ID"]).to_csv(UPLOADED_MATCHES_FILE, index=False)
+        # Clear uploaded match log
+        pd.DataFrame(columns=["Match ID"]).to_csv(UPLOADED_MATCHES_FILE, index=False)
 
-            # Clear undo/redo stacks
-            st.session_state.undo_stack.clear()
-            st.session_state.redo_stack.clear()
+        # Optionally clear undo/redo stacks
+        st.session_state.undo_stack.clear()
+        st.session_state.redo_stack.clear()
 
-            # Delete match logs
-            for file in LOGS_DIR.glob("*.csv"):
-                file.unlink()
+        # Optionally delete match logs
+        for file in LOGS_DIR.glob("*.csv"):
+            file.unlink()
 
-            st.success("All player points, uploaded match list, and logs reset.")
-        else:
-            st.warning("'Total Points' column missing in master file.")
+        st.success("All player points, uploaded match list, and logs reset.")
     else:
         st.warning("Master file missing.")
 
@@ -134,30 +132,23 @@ if redo:
     else:
         st.warning("Nothing to redo.")
 
-# Show leaderboard safely
+# Show leaderboard
 if MASTER_FILE.exists():
     df = pd.read_csv(MASTER_FILE)
-    st.write("Master file columns:", df.columns.tolist())  # DEBUG info: Remove if not needed
-
-    player_col = "Player Name" if "Player Name" in df.columns else df.columns[0]
-    if "Total Points" not in df.columns:
-        st.warning("The column 'Total Points' is missing from the master file.")
-    else:
-        top5 = df.sort_values(by="Total Points", ascending=False).head(5)
-        st.subheader("🏆 Top 5 Players")
-        for i, row in top5.iterrows():
-            name = row.get(player_col, "Unknown Player")
-            points = row.get("Total Points", 0)
-            st.markdown(f"**{i+1}. {name}** — {points} points")
+    top5 = df.sort_values(by="Total Points", ascending=False).head(5)
+    st.subheader("🏆 Top 5 Players")
+    st.dataframe(top5)
 else:
     st.warning("No player data available. Please upload players_master.csv.")
 
-# Show uploaded match list as bullet points
-if UPLOADED_MATCHES_FILE.exists():
+# Show uploaded match list (only Match IDs)
+st.subheader("📋 Uploaded Matches")
+if UPLOADED_MATCHES_FILE.exists() and UPLOADED_MATCHES_FILE.stat().st_size > 0:
     uploaded_log_df = pd.read_csv(UPLOADED_MATCHES_FILE)
-    st.subheader("📋 Uploaded Matches")
     if uploaded_log_df.empty:
         st.info("No matches uploaded yet.")
     else:
         for match_id in uploaded_log_df["Match ID"]:
             st.markdown(f"- {match_id}")
+else:
+    st.info("No matches uploaded yet.")
