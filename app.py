@@ -24,7 +24,7 @@ if not UPLOADED_MATCHES_FILE.exists():
 
 # Streamlit page setup
 st.set_page_config(page_title="Elle Tournament Tracker", layout="wide")
-st.title("🥎 Elle Tournament - Match Uploader & Leaderboard")
+st.title("🥎 Elle Tournament - Leaderboard")
 
 # Undo/Redo state
 if "undo_stack" not in st.session_state:
@@ -136,9 +136,17 @@ if redo:
 if MASTER_FILE.exists():
     df = pd.read_csv(MASTER_FILE)
     top5 = df.sort_values(by="Total Points", ascending=False).head(5)
-    top5.index = range(1, len(top5) + 1)  # Set index to 1, 2, 3, ...
+    top5.index = range(1, len(top5) + 1)
+
+    def highlight_first_row(row):
+        if row.name == 1:  # index 1 corresponds to 1st place now
+            return ['background-color: gold'] * len(row)
+        return [''] * len(row)
+
+    styled_top5 = top5.style.apply(highlight_first_row, axis=1)
+
     st.subheader("🏆 Top 5 Players")
-    st.dataframe(top5)
+    st.dataframe(styled_top5)
 else:
     st.warning("No player data available. Please upload players_master.csv.")
 
