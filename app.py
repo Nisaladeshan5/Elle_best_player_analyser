@@ -136,19 +136,38 @@ if redo:
 if MASTER_FILE.exists():
     df = pd.read_csv(MASTER_FILE)
     top5 = df.sort_values(by="Total Points", ascending=False).head(5).copy()
-    top5.insert(0, "Rank", range(1, 5))  # Add Rank column
-
-    def highlight_first_place(row):
-        if row["Rank"] == 1:
-            return ['background-color: gold; font-weight: bold'] * len(row)
-        return [''] * len(row)
-
-    styled_top5 = top5.style.apply(highlight_first_place, axis=1)
+    top5.insert(0, "Rank", range(1, 6))
 
     st.subheader("🏆 Top 5 Players")
-    st.dataframe(styled_top5)
+
+    # Highlight 1st place with glow effect
+    first = top5.iloc[0]
+    st.markdown(
+        f"""
+        <div style="
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 15px;
+            background: #fffbe6;
+            border: 2px solid gold;
+            box-shadow: 0 0 15px 5px gold;
+            font-weight: bold;
+            font-size: 20px;
+            text-align: center;">
+            🥇 <span style='color:#DAA520;'>No. 1: {first['Player Name']}</span><br>
+            Total Points: {first['Total Points']}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # Show ranks 2 to 5 as table without row index
+    rest = top5.iloc[1:].reset_index(drop=True)
+    st.dataframe(rest, use_container_width=True)
+
 else:
     st.warning("No player data available. Please upload players_master.csv.")
+
 
 # Show uploaded match list (only Match IDs)
 st.subheader("📋 Uploaded Matches")
