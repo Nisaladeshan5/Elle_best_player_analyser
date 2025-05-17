@@ -135,15 +135,15 @@ if redo:
 # Show leaderboard
 if MASTER_FILE.exists():
     df = pd.read_csv(MASTER_FILE)
-    top5 = df.sort_values(by="Total Points", ascending=False).head(5)
-    top5.index = range(1, len(top5) + 1)
+    top5 = df.sort_values(by="Total Points", ascending=False).head(5).copy()
+    top5.insert(0, "Rank", range(1, 6))  # Add Rank column
 
-    def highlight_first_row(row):
-        if row.name == 1:  # index 1 corresponds to 1st place now
-            return ['background-color: gold'] * len(row)
+    def highlight_first_place(row):
+        if row["Rank"] == 1:
+            return ['background-color: gold; font-weight: bold'] * len(row)
         return [''] * len(row)
 
-    styled_top5 = top5.style.apply(highlight_first_row, axis=1)
+    styled_top5 = top5.style.apply(highlight_first_place, axis=1)
 
     st.subheader("🏆 Top 5 Players")
     st.dataframe(styled_top5)
