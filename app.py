@@ -7,7 +7,7 @@ from datetime import datetime
 from utils import calculate_points
 
 # Paths
-BASE_DIR = Path("D:\Projects\Elle_score_analyzer")
+BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / "data"
 LOGS_DIR = DATA_DIR / "match_logs"
 MASTER_FILE = DATA_DIR / "players_master.csv"
