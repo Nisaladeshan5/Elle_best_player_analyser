@@ -142,13 +142,13 @@ else:
     st.warning("No player data available. Please upload players_master.csv.")
 
 # Show uploaded match list (only Match IDs)
+st.subheader("📋 Uploaded Matches")
 if UPLOADED_MATCHES_FILE.exists() and UPLOADED_MATCHES_FILE.stat().st_size > 0:
     uploaded_log_df = pd.read_csv(UPLOADED_MATCHES_FILE)
-    st.subheader("📋 Uploaded Matches")
     if uploaded_log_df.empty:
         st.info("No matches uploaded yet.")
     else:
-        st.table(uploaded_log_df["Match ID"])
+        for match_id in uploaded_log_df["Match ID"]:
+            st.markdown(f"- {match_id}")
 else:
-    st.subheader("📋 Uploaded Matches")
     st.info("No matches uploaded yet.")
