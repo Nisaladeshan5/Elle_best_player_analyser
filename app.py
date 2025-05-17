@@ -144,8 +144,9 @@ if MASTER_FILE.exists():
     df = pd.read_csv(MASTER_FILE)
     top5 = df.sort_values(by="Total Points", ascending=False).head(5)
     st.subheader("🏆 Top 5 Players")
+    player_name_col = "Player Name" if "Player Name" in df.columns else df.columns[0]  # fallback
     for i, row in top5.iterrows():
-        st.markdown(f"**{i+1}. {row['Player Name']}** — {row['Total Points']} points")
+        st.markdown(f"**{i+1}. {row[player_name_col]}** — {row['Total Points']} points")
 else:
     st.warning("No player data available. Please upload players_master.csv.")
 
