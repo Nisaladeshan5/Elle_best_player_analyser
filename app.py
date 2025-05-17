@@ -33,7 +33,6 @@ if "redo_stack" not in st.session_state:
     st.session_state.redo_stack = []
 
 def save_snapshot():
-    """Save snapshot of current master file for undo functionality."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     snapshot = DATA_DIR / f"players_master_snapshot_{timestamp}.csv"
     shutil.copy(MASTER_FILE, snapshot)
@@ -45,7 +44,18 @@ uploaded_file = st.file_uploader("Upload Match CSV", type="csv")
 
 if uploaded_file:
     match_df = pd.read_csv(uploaded_file)
-    match_id = match_df["Match ID"].iloc[0]
+
+    # Validate required columns
+    required_columns = {"Jersey", "Score", "Match ID"}
+    if not required_columns.issubset(match_df.columns):
+        st.error(f"Uploaded CSV is missing required columns: {required_columns - set(match_df.columns)}")
+        st.stop()
+
+    try:
+        match_id = match_df["Match ID"].iloc[0]
+    except Exception:
+        match_id = uploaded_file.name.replace(".csv", "")
+        st.warning(f"'Match ID' not found. Using filename as Match ID: {match_id}")
 
     if UPLOADED_MATCHES_FILE.exists() and UPLOADED_MATCHES_FILE.stat().st_size > 0:
         uploaded_matches_df = pd.read_csv(UPLOADED_MATCHES_FILE)
@@ -53,14 +63,16 @@ if uploaded_file:
         uploaded_matches_df = pd.DataFrame(columns=["Match ID"])
 
     if match_id not in uploaded_matches_df["Match ID"].values:
-        # Log only the match ID
         new_row = pd.DataFrame([{"Match ID": match_id}])
         uploaded_matches_df = pd.concat([uploaded_matches_df, new_row], ignore_index=True)
         uploaded_matches_df.to_csv(UPLOADED_MATCHES_FILE, index=False)
 
         st.success(f"✅ Match {match_id} uploaded successfully!")
 
-        # Process points and update master
+        # Backup match log
+        log_filename = LOGS_DIR / f"{match_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        match_df.to_csv(log_filename, index=False)
+
         if MASTER_FILE.exists():
             master_df = pd.read_csv(MASTER_FILE)
             save_snapshot()
@@ -76,12 +88,13 @@ if uploaded_file:
     else:
         st.warning(f"Match {match_id} already uploaded.")
 
-# Reset / Undo / Redo buttons
+# Reset / Undo / Redo
 spacer1, center_col, spacer2 = st.columns([4, 3, 4])
 with center_col:
     col1, col2, col3 = st.columns(3)
     with col1:
-        reset = st.button("🔄 Reset")
+        confirm_reset = st.checkbox("Confirm Reset")
+        reset = st.button("🔄 Reset", disabled=not confirm_reset)
     with col2:
         undo = st.button("⬅️ Undo")
     with col3:
@@ -90,23 +103,17 @@ with center_col:
 if reset:
     if MASTER_FILE.exists():
         save_snapshot()
-        # Reset points
         df = pd.read_csv(MASTER_FILE)
         df["Total Points"] = 0
         df.to_csv(MASTER_FILE, index=False)
-
-        # Clear uploaded match log
         pd.DataFrame(columns=["Match ID"]).to_csv(UPLOADED_MATCHES_FILE, index=False)
 
-        # Optionally clear undo/redo stacks
-        st.session_state.undo_stack.clear()
-        st.session_state.redo_stack.clear()
-
-        # Optionally delete match logs
+        # Clear logs
         for file in LOGS_DIR.glob("*.csv"):
             file.unlink()
-
-        st.success("All player points, uploaded match list, and logs reset.")
+        st.session_state.undo_stack.clear()
+        st.session_state.redo_stack.clear()
+        st.success("All player points, uploaded matches, and logs reset.")
     else:
         st.warning("Master file missing.")
 
@@ -137,18 +144,18 @@ if MASTER_FILE.exists():
     df = pd.read_csv(MASTER_FILE)
     top5 = df.sort_values(by="Total Points", ascending=False).head(5)
     st.subheader("🏆 Top 5 Players")
-    st.dataframe(top5)
+    for i, row in top5.iterrows():
+        st.markdown(f"**{i+1}. {row['Player Name']}** — {row['Total Points']} points")
 else:
     st.warning("No player data available. Please upload players_master.csv.")
 
-# Show uploaded match list (only Match IDs)
-st.subheader("📋 Uploaded Matches")
-if UPLOADED_MATCHES_FILE.exists() and UPLOADED_MATCHES_FILE.stat().st_size > 0:
+# Show uploaded matches
+if UPLOADED_MATCHES_FILE.exists():
     uploaded_log_df = pd.read_csv(UPLOADED_MATCHES_FILE)
+    st.subheader("📋 Uploaded Matches")
     if uploaded_log_df.empty:
         st.info("No matches uploaded yet.")
     else:
-        for match_id in uploaded_log_df["Match ID"]:
-            st.markdown(f"- {match_id}")
-else:
-    st.info("No matches uploaded yet.")
+        st.markdown("**Uploaded Match IDs:**")
+        for match in uploaded_log_df["Match ID"]:
+            st.markdown(f"- {match}")
