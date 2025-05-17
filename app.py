@@ -136,7 +136,7 @@ if redo:
 if MASTER_FILE.exists():
     df = pd.read_csv(MASTER_FILE)
     top5 = df.sort_values(by="Total Points", ascending=False).head(5).copy()
-    top5.insert(0, "Rank", range(1, 6))  # Add Rank column
+    top5.insert(0, "Rank", range(1, 5))  # Add Rank column
 
     def highlight_first_place(row):
         if row["Rank"] == 1:
