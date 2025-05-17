@@ -48,7 +48,12 @@ if uploaded_file:
     match_id = match_df["Match ID"].iloc[0]
 
     # Save match ID to uploaded_matches.csv (not the full file)
-    uploaded_matches_df = pd.read_csv(UPLOADED_MATCHES_FILE)
+    uploaded_log_df = pd.DataFrame()  # default
+
+    if UPLOADED_MATCHES_FILE.exists() and UPLOADED_MATCHES_FILE.stat().st_size > 0:
+        uploaded_matches_df = pd.read_csv(UPLOADED_MATCHES_FILE)
+    else:
+        st.info("No matches have been uploaded yet.")
     if match_id not in uploaded_matches_df["Match ID"].values:
         new_row = pd.DataFrame([{
             "Match ID": match_id,
