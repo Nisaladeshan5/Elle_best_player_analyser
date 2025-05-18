@@ -58,7 +58,7 @@ if uploaded_file:
         uploaded_matches_df = pd.concat([uploaded_matches_df, new_row], ignore_index=True)
         uploaded_matches_df.to_csv(UPLOADED_MATCHES_FILE, index=False)
 
-        st.success(f"✅ Match {match_id} uploaded successfully!")
+        st.toast(f"✅ Match {match_id} uploaded successfully!", icon="📥")
 
         # Process points and update master
         if MASTER_FILE.exists():
@@ -70,14 +70,14 @@ if uploaded_file:
             leaderboard = updated_df.sort_values(by="Total Points", ascending=False)
             leaderboard.to_csv(LEADERBOARD_FILE, index=False)
 
-            st.success("Points updated and leaderboard refreshed.")
+            st.toast("✅ Points updated and leaderboard refreshed.", icon="✅")
         else:
-            st.warning("players_master.csv not found. Please upload it first.")
+            st.toast("⚠️ players_master.csv not found. Please upload it first.", icon="⚠️")
     else:
-        st.warning(f"Match {match_id} already uploaded.")
+        st.toast(f"⚠️ Match {match_id} already uploaded.", icon="⚠️")
 
 # Reset / Undo / Redo buttons
-spacer1, center_col, spacer2 = st.columns([4, 3, 4])
+spacer1, center_col, spacer2 = st.columns([4, 3, 3])
 with center_col:
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -90,25 +90,17 @@ with center_col:
 if reset:
     if MASTER_FILE.exists():
         save_snapshot()
-        # Reset points
         df = pd.read_csv(MASTER_FILE)
         df["Total Points"] = 0
         df.to_csv(MASTER_FILE, index=False)
-
-        # Clear uploaded match log
         pd.DataFrame(columns=["Match ID"]).to_csv(UPLOADED_MATCHES_FILE, index=False)
-
-        # Optionally clear undo/redo stacks
         st.session_state.undo_stack.clear()
         st.session_state.redo_stack.clear()
-
-        # Optionally delete match logs
         for file in LOGS_DIR.glob("*.csv"):
             file.unlink()
-
-        st.success("All player points, uploaded match list, and logs reset.")
+        st.toast("🔄 All player points, match list, and logs reset.", icon="♻️")
     else:
-        st.warning("Master file missing.")
+        st.toast("⚠️ Master file missing.", icon="⚠️")
 
 if undo:
     if st.session_state.undo_stack:
@@ -117,9 +109,9 @@ if undo:
         shutil.copy(MASTER_FILE, redo_path)
         st.session_state.redo_stack.append(redo_path)
         shutil.copy(last, MASTER_FILE)
-        st.success("Undo complete.")
+        st.toast("⬅️ Undo complete.", icon="↩️")
     else:
-        st.warning("Nothing to undo.")
+        st.toast("⚠️ Nothing to undo.", icon="⚠️")
 
 if redo:
     if st.session_state.redo_stack:
@@ -128,15 +120,15 @@ if redo:
         shutil.copy(MASTER_FILE, undo_path)
         st.session_state.undo_stack.append(undo_path)
         shutil.copy(next_, MASTER_FILE)
-        st.success("Redo complete.")
+        st.toast("➡️ Redo complete.", icon="↪️")
     else:
-        st.warning("Nothing to redo.")
+        st.toast("⚠️ Nothing to redo.", icon="⚠️")
 
 # Show leaderboard
 if MASTER_FILE.exists():
     df = pd.read_csv(MASTER_FILE)
     top5 = df.sort_values(by="Total Points", ascending=False).head(5)
-    top5.index = range(1, len(top5) + 1)  # Set index to 1, 2, 3, ...
+    top5.index = range(1, len(top5) + 1)
     st.subheader("🏆 Top 5 Players")
     st.dataframe(top5)
 else:
