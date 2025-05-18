@@ -77,7 +77,7 @@ if uploaded_file:
         st.warning(f"Match {match_id} already uploaded.")
 
 # Reset / Undo / Redo buttons
-spacer1, center_col, spacer2 = st.columns([4, 3, 4])
+spacer1, center_col, spacer2 = st.columns([4, 3, 3])
 with center_col:
     col1, col2, col3 = st.columns(3)
     with col1:
